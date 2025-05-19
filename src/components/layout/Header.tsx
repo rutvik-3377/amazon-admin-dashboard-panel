@@ -7,6 +7,7 @@ import {
   Settings,
   User,
   ChevronDown,
+  LogOut
 } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +19,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   toggleSidebar: () => void;
 }
 
 const Header = ({ toggleSidebar }: HeaderProps) => {
+  const { user, logout } = useAuth();
+
   return (
     <header className="amazon-header h-16 flex items-center justify-between px-4 lg:px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -49,7 +53,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 ml-2">
               <User className="h-5 w-5" />
-              <span className="hidden md:inline-flex">Admin User</span>
+              <span className="hidden md:inline-flex">{user?.name || 'Admin User'}</span>
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -65,7 +69,8 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>
+              <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

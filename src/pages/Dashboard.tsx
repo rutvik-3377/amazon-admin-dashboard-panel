@@ -9,10 +9,10 @@ import {
   DollarSign, 
   ShoppingCart, 
   Users, 
-  CreditCard,
-  AlertCircle
+  CreditCard
 } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
+import api from '@/services/api';
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState<any>(null);
@@ -21,79 +21,36 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulating API calls
-    // In a real app, you'd use fetch or axios to call your backend API
-    setTimeout(() => {
-      // This data would normally come from your backend
-      const metricsData = {
-        totalSales: 34582.75,
-        totalOrders: 587,
-        totalCustomers: 312,
-        averageOrderValue: 58.91,
-        monthlyRevenue: [
-          { month: 'Jan', revenue: 4200 },
-          { month: 'Feb', revenue: 4800 },
-          { month: 'Mar', revenue: 5100 },
-          { month: 'Apr', revenue: 4900 },
-          { month: 'May', revenue: 5300 },
-          { month: 'Jun', revenue: 5800 }
-        ],
-        categoryDistribution: [
-          { name: 'Electronics', value: 42 },
-          { name: 'Clothing', value: 28 },
-          { name: 'Home', value: 15 },
-          { name: 'Sports', value: 10 },
-          { name: 'Books', value: 5 }
-        ]
-      };
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch metrics
+        const metricsResponse = await api.get('/api/metrics');
+        setMetrics(metricsResponse.data);
+        
+        // Fetch recent orders
+        const ordersResponse = await api.get('/api/orders');
+        // Take the 5 most recent orders
+        setOrders(ordersResponse.data.slice(0, 5));
+        
+        setLoading(false);
+        
+        toast({
+          title: "Dashboard Updated",
+          description: "Latest metrics have been loaded",
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setLoading(false);
+        
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
+        });
+      }
+    };
 
-      const ordersData = [
-        { 
-          id: 1001, 
-          customer: 'John Smith', 
-          date: '2025-05-15', 
-          status: 'Delivered', 
-          total: 99.99 
-        },
-        { 
-          id: 1002, 
-          customer: 'Sarah Johnson', 
-          date: '2025-05-16', 
-          status: 'Processing', 
-          total: 259.97 
-        },
-        { 
-          id: 1003, 
-          customer: 'Mike Brown', 
-          date: '2025-05-17', 
-          status: 'Shipped', 
-          total: 79.99 
-        },
-        { 
-          id: 1004, 
-          customer: 'Emma Wilson', 
-          date: '2025-05-18', 
-          status: 'Processing', 
-          total: 149.98 
-        },
-        { 
-          id: 1005, 
-          customer: 'Alex Taylor', 
-          date: '2025-05-18', 
-          status: 'Pending', 
-          total: 24.99 
-        }
-      ];
-
-      setMetrics(metricsData);
-      setOrders(ordersData);
-      setLoading(false);
-
-      toast({
-        title: "Dashboard Updated",
-        description: "Latest metrics have been loaded",
-      });
-    }, 1000);
+    fetchDashboardData();
   }, [toast]);
 
   if (loading) {
@@ -137,7 +94,7 @@ const Dashboard = () => {
           />
           <StatCard 
             title="Customers" 
-            value={metrics.totalCustomers}
+            value={metrics.totalProducts}
             description="Total registered" 
             icon={<Users className="h-4 w-4" />}
             trend={{
@@ -147,7 +104,7 @@ const Dashboard = () => {
           />
           <StatCard 
             title="Avg. Order Value" 
-            value={`$${metrics.averageOrderValue}`}
+            value={`$${metrics.averageOrderValue.toFixed(2)}`}
             description="Per order" 
             icon={<CreditCard className="h-4 w-4" />}
             trend={{

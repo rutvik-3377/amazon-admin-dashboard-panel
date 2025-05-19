@@ -24,6 +24,7 @@ import {
   SlidersHorizontal,
   Star,
   MoreVertical,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,9 +34,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from '@/components/ui/use-toast';
+import api from '@/services/api';
 
 interface Product {
-  id: number;
+  _id: string;
   name: string;
   price: number;
   stock: number;
@@ -49,62 +52,45 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulating API call
-    setTimeout(() => {
-      const productsData: Product[] = [
-        { 
-          id: 1, 
-          name: 'Wireless Headphones', 
-          price: 99.99, 
-          stock: 45, 
-          category: 'Electronics', 
-          rating: 4.5, 
-          sales: 128 
-        },
-        { 
-          id: 2, 
-          name: 'Smart Watch', 
-          price: 199.99, 
-          stock: 32, 
-          category: 'Electronics', 
-          rating: 4.2, 
-          sales: 97 
-        },
-        { 
-          id: 3, 
-          name: 'Running Shoes', 
-          price: 79.99, 
-          stock: 65, 
-          category: 'Clothing', 
-          rating: 4.7, 
-          sales: 215 
-        },
-        { 
-          id: 4, 
-          name: 'Coffee Maker', 
-          price: 59.99, 
-          stock: 28, 
-          category: 'Home', 
-          rating: 4.3, 
-          sales: 76 
-        },
-        { 
-          id: 5, 
-          name: 'Yoga Mat', 
-          price: 24.99, 
-          stock: 82, 
-          category: 'Sports', 
-          rating: 4.8, 
-          sales: 143 
-        }
-      ];
+    const fetchProducts = async () => {
+      try {
+        const response = await api.get('/api/products');
+        setProducts(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setLoading(false);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive",
+        });
+      }
+    };
 
-      setProducts(productsData);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    fetchProducts();
+  }, [toast]);
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await api.delete(`/api/products/${id}`);
+      setProducts(products.filter(product => product._id !== id));
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getRatingStars = (rating: number) => {
     const stars = [];
@@ -140,7 +126,7 @@ const Products = () => {
       (categoryFilter === '' || product.category === categoryFilter)
     );
 
-  const categories = ['Electronics', 'Clothing', 'Home', 'Sports'];
+  const categories = Array.from(new Set(products.map(product => product.category)));
 
   return (
     <Layout>
@@ -184,7 +170,7 @@ const Products = () => {
 
         {loading ? (
           <div className="flex justify-center py-10">
-            <div className="h-10 w-10 border-4 border-t-amazon-orange border-r-amazon-blue border-b-amazon-orange border-l-amazon-blue rounded-full animate-spin"></div>
+            <Loader2 className="h-10 w-10 animate-spin text-amazon-orange" />
           </div>
         ) : (
           <div className="rounded-md border">
@@ -203,7 +189,7 @@ const Products = () => {
               <TableBody>
                 {filteredProducts.length > 0 ? (
                   filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
+                    <TableRow key={product._id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -227,7 +213,12 @@ const Products = () => {
                             <DropdownMenuItem>Edit</DropdownMenuItem>
                             <DropdownMenuItem>Duplicate</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-500">Delete</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-500"
+                              onClick={() => handleDeleteProduct(product._id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
